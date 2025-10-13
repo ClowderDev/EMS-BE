@@ -6,7 +6,12 @@ const envConfig = () => ({
   MONGO_URI: getEnv('MONGO_URI', ''),
   JWT_SECRET: getEnv('JWT_SECRET', 'your_jwt_secret'),
   JWT_EXPIRATION: getEnv('JWT_EXPIRATION', '1h'),
-  FRONTEND_URL: getEnv('FRONTEND_URL', 'http://localhost:5173')
+  FRONTEND_URL: getEnv('FRONTEND_URL', 'http://localhost:5173'),
+  // Email configuration
+  EMAIL_HOST: getEnv('EMAIL_HOST', 'smtp.gmail.com'),
+  EMAIL_PORT: getEnv('EMAIL_PORT', '587'),
+  EMAIL_USER: getEnv('EMAIL_USER', ''),
+  EMAIL_PASSWORD: getEnv('EMAIL_PASSWORD', '')
 })
 
 export const Env = envConfig()

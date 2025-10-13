@@ -8,6 +8,8 @@ export interface EmployeeDocument extends Document {
   phone?: string
   email: string
   password: string
+  resetPasswordToken?: string
+  resetPasswordExpires?: Date
   createdAt: Date
   updatedAt: Date
   comparePassword: (password: string) => Promise<boolean>
@@ -45,6 +47,14 @@ const employeeSchema = new Schema<EmployeeDocument>(
     password: {
       type: String,
       required: true
+    },
+    resetPasswordToken: {
+      type: String,
+      required: false
+    },
+    resetPasswordExpires: {
+      type: Date,
+      required: false
     }
   },
   {
