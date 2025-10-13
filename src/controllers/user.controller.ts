@@ -64,12 +64,9 @@ export const forgotPasswordController = asyncHandler(async (req: Request, res: R
   })
 })
 
-// POST /api/v1/users/reset-password?token=xxx
 export const resetPasswordController = asyncHandler(async (req: Request, res: Response) => {
-  // Validate token từ query param
   const { token } = resetPasswordTokenSchema.parse(req.query)
 
-  // Validate body (password)
   const { newPassword } = resetPasswordSchema.parse(req.body)
 
   const result = await resetPassword(token, newPassword)

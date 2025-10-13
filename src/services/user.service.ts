@@ -77,7 +77,7 @@ export const forgotPassword = async (data: ForgotPasswordSchemaType) => {
 
   const user = await EmployeeModel.findOne({ email })
 
-  // Không tiết lộ thông tin user có tồn tại hay không (security best practice)
+  // Không tiết lộ thông tin user
   if (!user) {
     return {
       message: 'If the email exists, a password reset link has been sent'
@@ -87,12 +87,12 @@ export const forgotPassword = async (data: ForgotPasswordSchemaType) => {
   // Tạo reset token (random 32 bytes)
   const resetToken = crypto.randomBytes(32).toString('hex')
 
-  // Hash token trước khi lưu vào DB (security best practice)
+  // Hash token trước khi lưu vào DB
   const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex')
 
   // Lưu token và thời gian hết hạn (15 phút)
   user.resetPasswordToken = hashedToken
-  user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
+  user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000)
   await user.save()
 
   // Gửi email với token gốc (không hash)
