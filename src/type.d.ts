@@ -1,9 +1,9 @@
 import type mongoose from 'mongoose'
-import type { UserDocument } from '../../models/user.model'
+import type { EmployeeDocument } from './models/employee.model'
 
 declare global {
   namespace Express {
-    interface User extends UserDocument {
+    interface User extends EmployeeDocument {
       _id: mongoose.Types.ObjectId | string
     }
     interface Request {
