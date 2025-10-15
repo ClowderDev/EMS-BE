@@ -25,8 +25,6 @@ export const createShiftSchema = z
     }
   )
 
-export type CreateShiftSchemaType = z.infer<typeof createShiftSchema>
-
 export const updateShiftSchema = z
   .object({
     shiftName: z
@@ -60,13 +58,9 @@ export const updateShiftSchema = z
     }
   )
 
-export type UpdateShiftSchemaType = z.infer<typeof updateShiftSchema>
-
 export const shiftIdSchema = z.object({
   id: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid shift ID format')
 })
-
-export type ShiftIdSchemaType = z.infer<typeof shiftIdSchema>
 
 export const getShiftsQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional().default(1),
@@ -81,3 +75,6 @@ export const getShiftsQuerySchema = z.object({
 })
 
 export type GetShiftsQuerySchemaType = z.infer<typeof getShiftsQuerySchema>
+export type CreateShiftSchemaType = z.infer<typeof createShiftSchema>
+export type UpdateShiftSchemaType = z.infer<typeof updateShiftSchema>
+export type ShiftIdSchemaType = z.infer<typeof shiftIdSchema>
