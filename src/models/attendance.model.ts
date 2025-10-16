@@ -3,17 +3,24 @@ import mongoose, { Document, Schema } from 'mongoose'
 export interface AttendanceDocument extends Document {
   employeeId: mongoose.Types.ObjectId
   shiftId: mongoose.Types.ObjectId
+  registrationId: mongoose.Types.ObjectId
   date: Date
   checkInTime: Date | null
   checkOutTime: Date | null
-  status: 'present' | 'absent' | 'on leave'
-  location: {
+  checkInLocation: {
     latitude: number
     longitude: number
   } | null
+  checkOutLocation: {
+    latitude: number
+    longitude: number
+  } | null
+  status: 'checked-in' | 'checked-out' | 'absent'
   notes: string | null
+  workHours: number | null
   createdAt: Date
   updatedAt: Date
+  calculateWorkHours: () => number | null
 }
 
 const attendanceSchema = new Schema<AttendanceDocument>(
@@ -28,6 +35,11 @@ const attendanceSchema = new Schema<AttendanceDocument>(
       ref: 'Shift',
       required: true
     },
+    registrationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ShiftRegistration',
+      required: true
+    },
     date: {
       type: Date,
       required: true
@@ -40,12 +52,7 @@ const attendanceSchema = new Schema<AttendanceDocument>(
       type: Date,
       default: null
     },
-    status: {
-      type: String,
-      enum: ['present', 'absent', 'on leave'],
-      required: true
-    },
-    location: {
+    checkInLocation: {
       type: {
         latitude: {
           type: Number,
@@ -58,8 +65,30 @@ const attendanceSchema = new Schema<AttendanceDocument>(
       },
       default: null
     },
+    checkOutLocation: {
+      type: {
+        latitude: {
+          type: Number,
+          required: true
+        },
+        longitude: {
+          type: Number,
+          required: true
+        }
+      },
+      default: null
+    },
+    status: {
+      type: String,
+      enum: ['checked-in', 'checked-out', 'absent'],
+      default: 'absent'
+    },
     notes: {
       type: String,
+      default: null
+    },
+    workHours: {
+      type: Number,
       default: null
     }
   },
@@ -67,6 +96,15 @@ const attendanceSchema = new Schema<AttendanceDocument>(
     timestamps: true
   }
 )
+
+// Method để tính work hours
+attendanceSchema.methods.calculateWorkHours = function (): number | null {
+  if (this.checkInTime && this.checkOutTime) {
+    const diffMs = this.checkOutTime.getTime() - this.checkInTime.getTime()
+    return Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100 // Hours with 2 decimal places
+  }
+  return null
+}
 
 const AttendanceModel = mongoose.model<AttendanceDocument>('Attendance', attendanceSchema)
 export default AttendanceModel

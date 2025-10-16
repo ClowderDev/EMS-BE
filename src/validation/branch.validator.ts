@@ -2,7 +2,14 @@ import { z } from 'zod'
 
 export const createBranchSchema = z.object({
   branchName: z.string().min(3, 'Branch name must be at least 3 characters').max(100, 'Branch name is too long'),
-  address: z.string().min(5, 'Address must be at least 5 characters').max(200, 'Address is too long')
+  address: z.string().min(5, 'Address must be at least 5 characters').max(200, 'Address is too long'),
+  location: z
+    .object({
+      latitude: z.number().min(-90).max(90, 'Latitude must be between -90 and 90'),
+      longitude: z.number().min(-180).max(180, 'Longitude must be between -180 and 180'),
+      radius: z.number().min(10).max(10000, 'Radius must be between 10 and 10000 meters').optional().default(500)
+    })
+    .optional()
 })
 
 export const updateBranchSchema = z.object({
@@ -11,7 +18,14 @@ export const updateBranchSchema = z.object({
     .min(3, 'Branch name must be at least 3 characters')
     .max(100, 'Branch name is too long')
     .optional(),
-  address: z.string().min(5, 'Address must be at least 5 characters').max(200, 'Address is too long').optional()
+  address: z.string().min(5, 'Address must be at least 5 characters').max(200, 'Address is too long').optional(),
+  location: z
+    .object({
+      latitude: z.number().min(-90).max(90, 'Latitude must be between -90 and 90'),
+      longitude: z.number().min(-180).max(180, 'Longitude must be between -180 and 180'),
+      radius: z.number().min(10).max(10000, 'Radius must be between 10 and 10000 meters').optional().default(500)
+    })
+    .optional()
 })
 
 export const branchIdSchema = z.object({
