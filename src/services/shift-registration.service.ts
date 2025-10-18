@@ -1,8 +1,9 @@
 import mongoose from 'mongoose'
-import ShiftRegistrationModel from '~/models/shift_registration.model'
-import ShiftModel from '~/models/shift.model'
-import EmployeeModel from '~/models/employee.model'
-import { BadRequestException, NotFoundException, ForbiddenException } from '~/utils/app-error'
+import ShiftRegistrationModel from '../models/shift_registration.model'
+import ShiftModel from '../models/shift.model'
+import EmployeeModel from '../models/employee.model'
+import { NotFoundException, BadRequestException, ForbiddenException } from '../utils/app-error'
+import { notifyShiftApproved, notifyShiftRejected, notifyNewShiftRegistration } from './notification.service'
 import {
   CreateShiftRegistrationSchemaType,
   GetRegistrationsQuerySchemaType,
@@ -218,6 +219,31 @@ export const createRegistration = async (data: CreateShiftRegistrationSchemaType
 
   await newRegistration.save()
 
+  // Send notification to managers of this branch
+  // Find all managers in the same branch
+  const managers = await EmployeeModel.find({
+    branchId: shift.branchId,
+    role: 'manager'
+  }).lean()
+
+  // Get employee info for notification message
+  const employee = await EmployeeModel.findById(employeeIdStr).lean()
+  const employeeName = employee?.name || 'An employee'
+  const shiftTime = `${shift.startTime} - ${shift.endTime}`
+
+  // Send notification to all managers (async, don't block response)
+  if (managers.length > 0) {
+    Promise.all(
+      managers.map((manager) =>
+        notifyNewShiftRegistration(String(manager._id), employeeName, new Date(date), shiftTime).catch((err) => {
+          console.error(`Failed to send registration notification to manager ${manager._id}:`, err)
+        })
+      )
+    ).catch((err) => {
+      console.error('Failed to send manager notifications:', err)
+    })
+  }
+
   return newRegistration.toObject()
 }
 
@@ -267,6 +293,17 @@ export const approveRegistration = async (
   }
   await registration.save()
 
+  // Send notification to employee
+  const populatedReg = await registration.populate('shiftId')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const shiftData: any = populatedReg.shiftId
+  const shiftTime = `${shiftData.startTime} - ${shiftData.endTime}`
+
+  // Async notification - don't block response
+  notifyShiftApproved(registration.employeeId, registration.date, shiftTime).catch((err) => {
+    console.error('Failed to send approval notification:', err)
+  })
+
   return registration.toObject()
 }
 
@@ -298,6 +335,18 @@ export const rejectRegistration = async (
     registration.note = data.note
   }
   await registration.save()
+
+  // Send notification to employee
+  const populatedReg = await registration.populate('shiftId')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const shiftData: any = populatedReg.shiftId
+  const shiftTime = `${shiftData.startTime} - ${shiftData.endTime}`
+  const reason = data.note || undefined
+
+  // Async notification - don't block response
+  notifyShiftRejected(registration.employeeId, registration.date, shiftTime, reason).catch((err) => {
+    console.error('Failed to send rejection notification:', err)
+  })
 
   return registration.toObject()
 }
