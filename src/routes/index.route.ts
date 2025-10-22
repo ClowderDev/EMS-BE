@@ -7,6 +7,7 @@ import shiftRoutes from './shift.route'
 import shiftRegistrationRoutes from './shift-registration.route'
 import attendanceRoutes from './attendance.route'
 import notificationRoutes from './notification.route'
+import reportRoutes from './report.route'
 
 const router = express.Router()
 
@@ -18,5 +19,6 @@ router.use('/shifts', shiftRoutes)
 router.use('/shift-registrations', shiftRegistrationRoutes)
 router.use('/attendance', attendanceRoutes)
 router.use('/notifications', notificationRoutes)
+router.use('/reports', reportRoutes)
 
 export default router
