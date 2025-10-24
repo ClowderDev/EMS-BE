@@ -1,13 +1,16 @@
-import express, { NextFunction, Request, Response } from 'express'
+import express, { Request, Response } from 'express'
 import 'dotenv/config'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
+import { createServer } from 'http'
 import { Env } from './config/env.config'
 import connectDatabase from '~/config/database.config'
 import routes from './routes/index.route'
 import { errorHandler } from '~/middleware/errorHandler.middleware'
+import { initializeSocketIO } from './socket'
 
 const app = express()
+const httpServer = createServer(app)
 
 connectDatabase()
 
@@ -36,6 +39,10 @@ app.use((req: Request, res: Response) => {
 
 app.use(errorHandler)
 
-app.listen(Env.PORT, () => {
+// Initialize Socket.IO
+initializeSocketIO(httpServer)
+
+httpServer.listen(Env.PORT, () => {
   console.log(`Server is running on port ${Env.PORT}`)
+  console.log(`Socket.IO is ready for connections`)
 })
