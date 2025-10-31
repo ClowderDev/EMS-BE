@@ -97,7 +97,7 @@ export const forgotPassword = async (data: ForgotPasswordSchemaType) => {
 
   // Gửi email với token gốc (không hash)
   try {
-    await sendResetPasswordEmail(user.email, resetToken, user.name)
+    await sendResetPasswordEmail(user.email!, resetToken, user.name ?? '')
   } catch {
     // Nếu gửi email thất bại, xóa token
     user.resetPasswordToken = undefined
