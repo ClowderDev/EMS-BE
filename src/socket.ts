@@ -45,8 +45,8 @@ export const initializeSocketIO = (httpServer: HTTPServer) => {
 
       // Verify JWT token
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const decoded = jwt.verify(token, getEnv('JWT_ACCESS_SECRET')) as any
-      const userId = decoded.userId
+      const decoded = jwt.verify(token, getEnv('JWT_SECRET')) as any
+      const userId = decoded.employeeId || decoded.userId // Support both field names
 
       // Get user info
       const user = await EmployeeModel.findById(userId).select('name email role branchId').lean()
