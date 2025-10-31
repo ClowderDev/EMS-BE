@@ -7,6 +7,8 @@ import ShiftRegistrationModel from '../models/shift_registration.model'
 import AttendanceModel from '../models/attendance.model'
 import MessageModel from '../models/message.model'
 import NotificationModel from '../models/notification.model'
+import ViolationModel from '../models/violation.model'
+import PayrollModel from '../models/payroll.model'
 import { hashValue } from '../utils/bcrypt'
 
 // Load environment variables
@@ -58,6 +60,7 @@ const getEmployeesData = (branchIds: mongoose.Types.ObjectId[]) => [
   // Admin users
   {
     name: 'John Admin',
+    username: 'admin',
     role: 'admin',
     branchId: branchIds[0],
     phone: '+1234567890',
@@ -66,6 +69,7 @@ const getEmployeesData = (branchIds: mongoose.Types.ObjectId[]) => [
   },
   {
     name: 'Sarah Administrator',
+    username: 'sarah.admin',
     role: 'admin',
     branchId: branchIds[0],
     phone: '+1234567891',
@@ -76,6 +80,7 @@ const getEmployeesData = (branchIds: mongoose.Types.ObjectId[]) => [
   // Managers for each branch
   {
     name: 'Michael Manager',
+    username: 'michael.manager',
     role: 'manager',
     branchId: branchIds[0],
     phone: '+1234567892',
@@ -84,6 +89,7 @@ const getEmployeesData = (branchIds: mongoose.Types.ObjectId[]) => [
   },
   {
     name: 'Emily West',
+    username: 'emily.west',
     role: 'manager',
     branchId: branchIds[1],
     phone: '+1234567893',
@@ -92,6 +98,7 @@ const getEmployeesData = (branchIds: mongoose.Types.ObjectId[]) => [
   },
   {
     name: 'David East',
+    username: 'david.east',
     role: 'manager',
     branchId: branchIds[2],
     phone: '+1234567894',
@@ -100,6 +107,7 @@ const getEmployeesData = (branchIds: mongoose.Types.ObjectId[]) => [
   },
   {
     name: 'Lisa South',
+    username: 'lisa.south',
     role: 'manager',
     branchId: branchIds[3],
     phone: '+1234567895',
@@ -110,6 +118,7 @@ const getEmployeesData = (branchIds: mongoose.Types.ObjectId[]) => [
   // Employees for Head Office
   {
     name: 'Alice Johnson',
+    username: 'alice.johnson',
     role: 'employee',
     branchId: branchIds[0],
     phone: '+1234567896',
@@ -118,6 +127,7 @@ const getEmployeesData = (branchIds: mongoose.Types.ObjectId[]) => [
   },
   {
     name: 'Bob Smith',
+    username: 'bob.smith',
     role: 'employee',
     branchId: branchIds[0],
     phone: '+1234567897',
@@ -126,6 +136,7 @@ const getEmployeesData = (branchIds: mongoose.Types.ObjectId[]) => [
   },
   {
     name: 'Charlie Brown',
+    username: 'charlie.brown',
     role: 'employee',
     branchId: branchIds[0],
     phone: '+1234567898',
@@ -134,6 +145,7 @@ const getEmployeesData = (branchIds: mongoose.Types.ObjectId[]) => [
   },
   {
     name: 'Diana Prince',
+    username: 'diana.prince',
     role: 'employee',
     branchId: branchIds[0],
     phone: '+1234567899',
@@ -144,6 +156,7 @@ const getEmployeesData = (branchIds: mongoose.Types.ObjectId[]) => [
   // Employees for West Branch
   {
     name: 'Frank Wilson',
+    username: 'frank.wilson',
     role: 'employee',
     branchId: branchIds[1],
     phone: '+1234567800',
@@ -152,6 +165,7 @@ const getEmployeesData = (branchIds: mongoose.Types.ObjectId[]) => [
   },
   {
     name: 'Grace Lee',
+    username: 'grace.lee',
     role: 'employee',
     branchId: branchIds[1],
     phone: '+1234567801',
@@ -160,6 +174,7 @@ const getEmployeesData = (branchIds: mongoose.Types.ObjectId[]) => [
   },
   {
     name: 'Henry Chen',
+    username: 'henry.chen',
     role: 'employee',
     branchId: branchIds[1],
     phone: '+1234567802',
@@ -168,6 +183,7 @@ const getEmployeesData = (branchIds: mongoose.Types.ObjectId[]) => [
   },
   {
     name: 'Ivy Martinez',
+    username: 'ivy.martinez',
     role: 'employee',
     branchId: branchIds[1],
     phone: '+1234567803',
@@ -178,6 +194,7 @@ const getEmployeesData = (branchIds: mongoose.Types.ObjectId[]) => [
   // Employees for East Branch
   {
     name: 'Jack Taylor',
+    username: 'jack.taylor',
     role: 'employee',
     branchId: branchIds[2],
     phone: '+1234567804',
@@ -186,6 +203,7 @@ const getEmployeesData = (branchIds: mongoose.Types.ObjectId[]) => [
   },
   {
     name: 'Karen White',
+    username: 'karen.white',
     role: 'employee',
     branchId: branchIds[2],
     phone: '+1234567805',
@@ -194,6 +212,7 @@ const getEmployeesData = (branchIds: mongoose.Types.ObjectId[]) => [
   },
   {
     name: 'Leo Harris',
+    username: 'leo.harris',
     role: 'employee',
     branchId: branchIds[2],
     phone: '+1234567806',
@@ -204,6 +223,7 @@ const getEmployeesData = (branchIds: mongoose.Types.ObjectId[]) => [
   // Employees for South Branch
   {
     name: 'Mia Garcia',
+    username: 'mia.garcia',
     role: 'employee',
     branchId: branchIds[3],
     phone: '+1234567807',
@@ -212,6 +232,7 @@ const getEmployeesData = (branchIds: mongoose.Types.ObjectId[]) => [
   },
   {
     name: 'Nathan Clark',
+    username: 'nathan.clark',
     role: 'employee',
     branchId: branchIds[3],
     phone: '+1234567808',
@@ -220,6 +241,7 @@ const getEmployeesData = (branchIds: mongoose.Types.ObjectId[]) => [
   },
   {
     name: 'Olivia Rodriguez',
+    username: 'olivia.rodriguez',
     role: 'employee',
     branchId: branchIds[3],
     phone: '+1234567809',
@@ -555,7 +577,9 @@ async function seed() {
       ShiftRegistrationModel.deleteMany({}),
       AttendanceModel.deleteMany({}),
       MessageModel.deleteMany({}),
-      NotificationModel.deleteMany({})
+      NotificationModel.deleteMany({}),
+      ViolationModel.deleteMany({}),
+      PayrollModel.deleteMany({})
     ])
     console.log('✅ Cleared existing data')
 
@@ -573,7 +597,8 @@ async function seed() {
     const employeesWithHashedPasswords = await Promise.all(
       employeesData.map(async (employee) => ({
         ...employee,
-        password: await hashValue(employee.password)
+        password: await hashValue(employee.password),
+        isEmailVerified: true // All seed data users are pre-verified
       }))
     )
 
@@ -643,12 +668,15 @@ async function seed() {
     console.log('\n🔐 Login Credentials:')
     console.log('='.repeat(50))
     console.log('Admin:')
+    console.log('  Username: admin')
     console.log('  Email: admin@ems.com')
     console.log('  Password: Admin@123')
     console.log('\nManager (Head Office):')
+    console.log('  Username: michael.manager')
     console.log('  Email: michael.manager@ems.com')
     console.log('  Password: Manager@123')
     console.log('\nEmployee:')
+    console.log('  Username: alice.johnson')
     console.log('  Email: alice.johnson@ems.com')
     console.log('  Password: Employee@123')
     console.log('='.repeat(50))

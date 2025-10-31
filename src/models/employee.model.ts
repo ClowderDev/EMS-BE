@@ -3,13 +3,17 @@ import { compareValue, hashValue } from '~/utils/bcrypt'
 
 export interface EmployeeDocument extends Document {
   name: string
+  username: string // Used for login before email is set
   role: 'employee' | 'manager' | 'admin'
   branchId: mongoose.Types.ObjectId
   phone?: string
-  email: string
+  email?: string // Optional: added by user on first login
   password: string
   resetPasswordToken?: string
   resetPasswordExpires?: Date
+  emailVerificationCode?: string
+  emailVerificationExpires?: Date
+  isEmailVerified: boolean
   createdAt: Date
   updatedAt: Date
   comparePassword: (password: string) => Promise<boolean>
@@ -22,6 +26,13 @@ const employeeSchema = new Schema<EmployeeDocument>(
       type: String,
       required: true,
       trim: true
+    },
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true
     },
     role: {
       type: String,
@@ -40,9 +51,11 @@ const employeeSchema = new Schema<EmployeeDocument>(
     },
     email: {
       type: String,
-      required: true,
+      required: false, // Email is optional (admin creates account without email)
       trim: true,
-      lowercase: true
+      lowercase: true,
+      sparse: true, // Allow multiple null values but unique non-null values
+      unique: true
     },
     password: {
       type: String,
@@ -55,6 +68,18 @@ const employeeSchema = new Schema<EmployeeDocument>(
     resetPasswordExpires: {
       type: Date,
       required: false
+    },
+    emailVerificationCode: {
+      type: String,
+      required: false
+    },
+    emailVerificationExpires: {
+      type: Date,
+      required: false
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false
     }
   },
   {
