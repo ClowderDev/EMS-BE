@@ -106,7 +106,7 @@ export const getEmployeeById = async (id: string, requestUser: RequestUser) => {
 }
 
 export const createEmployee = async (data: CreateEmployeeSchemaType, requestUser: RequestUser) => {
-  const { name, email, password, phone, role, branchId } = data
+  const { name, username, email, password, phone, role, branchId } = data
 
   if (requestUser.role === 'manager') {
     if (branchId !== requestUser.branchId.toString()) {
@@ -117,9 +117,18 @@ export const createEmployee = async (data: CreateEmployeeSchemaType, requestUser
     }
   }
 
-  const existingEmployee = await EmployeeModel.findOne({ email })
-  if (existingEmployee) {
-    throw new BadRequestException('Email already exists')
+  // Check username uniqueness
+  const existingUsername = await EmployeeModel.findOne({ username })
+  if (existingUsername) {
+    throw new BadRequestException('Username already exists')
+  }
+
+  // Check email uniqueness (if provided)
+  if (email) {
+    const existingEmail = await EmployeeModel.findOne({ email })
+    if (existingEmail) {
+      throw new BadRequestException('Email already exists')
+    }
   }
 
   const branch = await BranchModel.findById(branchId)
@@ -129,6 +138,7 @@ export const createEmployee = async (data: CreateEmployeeSchemaType, requestUser
 
   const newEmployee = new EmployeeModel({
     name,
+    username,
     email,
     password,
     phone,
@@ -153,6 +163,19 @@ export const updateEmployee = async (id: string, data: UpdateEmployeeSchemaType,
     }
   }
 
+  // Check username uniqueness (if updating)
+  if (data.username && data.username !== employee.username) {
+    const existingUsername = await EmployeeModel.findOne({
+      username: data.username,
+      _id: { $ne: id }
+    })
+
+    if (existingUsername) {
+      throw new BadRequestException('Username already exists')
+    }
+  }
+
+  // Check email uniqueness (if updating)
   if (data.email && data.email !== employee.email) {
     const existingEmployee = await EmployeeModel.findOne({
       email: data.email,

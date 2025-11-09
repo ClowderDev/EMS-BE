@@ -2,7 +2,8 @@ import { z } from 'zod'
 
 export const createEmployeeSchema = z.object({
   name: z.string().min(3, 'Name must be at least 3 characters').max(100, 'Name is too long'),
-  email: z.string().email('Invalid email address'),
+  username: z.string().min(3, 'Username must be at least 3 characters').max(50, 'Username is too long'),
+  email: z.string().email('Invalid email address').optional(), // Email is optional
   password: z.string().min(6, 'Password must be at least 6 characters'),
   phone: z.string().min(10, 'Phone number must be at least 10 digits').optional(),
   role: z.enum(['employee', 'manager', 'admin']).default('employee'),
@@ -11,6 +12,7 @@ export const createEmployeeSchema = z.object({
 
 export const updateEmployeeSchema = z.object({
   name: z.string().min(3, 'Name must be at least 3 characters').max(100, 'Name is too long').optional(),
+  username: z.string().min(3, 'Username must be at least 3 characters').max(50, 'Username is too long').optional(),
   email: z.string().email('Invalid email address').optional(),
   phone: z.string().min(10, 'Phone number must be at least 10 digits').optional(),
   branchId: z
