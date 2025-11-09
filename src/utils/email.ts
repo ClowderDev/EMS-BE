@@ -41,10 +41,8 @@ export const sendEmail = async ({ to, subject, html, text }: SendEmailOptions): 
   }
 }
 
-// Template email
-export const sendResetPasswordEmail = async (email: string, resetToken: string, name: string): Promise<void> => {
-  const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`
-
+// Template email reset password với OTP
+export const sendResetPasswordOTPEmail = async (email: string, name: string, code: string): Promise<void> => {
   const html = `
     <!DOCTYPE html>
     <html>
@@ -52,13 +50,25 @@ export const sendResetPasswordEmail = async (email: string, resetToken: string, 
       <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .button {
-          display: inline-block;
-          padding: 12px 24px;
-          background-color: #007bff;
-          color: white;
-          text-decoration: none;
-          border-radius: 5px;
+        .code-box {
+          background-color: #f4f4f4;
+          border: 2px dashed #007bff;
+          border-radius: 8px;
+          padding: 20px;
+          text-align: center;
+          margin: 20px 0;
+        }
+        .code {
+          font-size: 32px;
+          font-weight: bold;
+          letter-spacing: 8px;
+          color: #007bff;
+          font-family: 'Courier New', monospace;
+        }
+        .warning {
+          background-color: #fff3cd;
+          border-left: 4px solid #ffc107;
+          padding: 12px;
           margin: 20px 0;
         }
         .footer { margin-top: 30px; font-size: 12px; color: #666; }
@@ -66,17 +76,24 @@ export const sendResetPasswordEmail = async (email: string, resetToken: string, 
     </head>
     <body>
       <div class="container">
-        <h2>Reset Your Password</h2>
+        <h2>🔐 Reset Your Password</h2>
         <p>Hi ${name},</p>
         <p>You requested to reset your password for your EMS account.</p>
-        <p>Click the button below to reset your password:</p>
-        <a href="${resetUrl}" class="button">Reset Password</a>
-        <p>Or copy and paste this link into your browser:</p>
-        <p>${resetUrl}</p>
-        <p><strong>This link will expire in 15 minutes.</strong></p>
-        <p>If you didn't request this, please ignore this email.</p>
+        <p>Use the verification code below to reset your password:</p>
+        
+        <div class="code-box">
+          <div class="code">${code}</div>
+        </div>
+
+        <div class="warning">
+          <strong>⚠️ Important:</strong> This code will expire in 15 minutes.
+        </div>
+
+        <p>If you didn't request this password reset, please ignore this email or contact support if you have concerns.</p>
+        
         <div class="footer">
           <p>Best regards,<br>EMS Team</p>
+          <p style="color: #999; font-size: 11px;">This is an automated email, please do not reply.</p>
         </div>
       </div>
     </body>
@@ -88,11 +105,11 @@ export const sendResetPasswordEmail = async (email: string, resetToken: string, 
 
     You requested to reset your password for your EMS account.
 
-    Click this link to reset your password: ${resetUrl}
+    Your password reset verification code is: ${code}
 
-    This link will expire in 15 minutes.
+    This code will expire in 15 minutes.
 
-    If you didn't request this, please ignore this email.
+    If you didn't request this password reset, please ignore this email.
 
     Best regards,
     EMS Team

@@ -27,16 +27,26 @@ export const changePasswordSchema = z
 
 export type ChangePasswordSchemaType = z.infer<typeof changePasswordSchema>
 
-// Schema cho forgot password
+// Schema cho forgot password (gửi OTP)
 export const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address')
 })
 
 export type ForgotPasswordSchemaType = z.infer<typeof forgotPasswordSchema>
 
-// Schema cho reset password (body only - token từ query param)
+// Schema cho verify reset password OTP
+export const verifyResetPasswordOTPSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  code: z.string().length(6, 'Verification code must be 6 digits')
+})
+
+export type VerifyResetPasswordOTPSchemaType = z.infer<typeof verifyResetPasswordOTPSchema>
+
+// Schema cho reset password với OTP
 export const resetPasswordSchema = z
   .object({
+    email: z.string().email('Invalid email address'),
+    code: z.string().length(6, 'Verification code must be 6 digits'),
     newPassword: z.string().min(6, 'Password must be at least 6 characters'),
     confirmPassword: z.string().min(1, 'Confirm password is required')
   })
@@ -46,10 +56,3 @@ export const resetPasswordSchema = z
   })
 
 export type ResetPasswordSchemaType = z.infer<typeof resetPasswordSchema>
-
-// Schema cho reset password token (query param)
-export const resetPasswordTokenSchema = z.object({
-  token: z.string().min(1, 'Reset token is required')
-})
-
-export type ResetPasswordTokenSchemaType = z.infer<typeof resetPasswordTokenSchema>

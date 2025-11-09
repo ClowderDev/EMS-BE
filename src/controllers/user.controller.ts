@@ -6,14 +6,15 @@ import {
   updateUserProfile,
   changePassword,
   forgotPassword,
+  verifyResetPasswordOTP,
   resetPassword
 } from '~/services/user.service'
 import {
   updateProfileSchema,
   changePasswordSchema,
   forgotPasswordSchema,
-  resetPasswordSchema,
-  resetPasswordTokenSchema
+  verifyResetPasswordOTPSchema,
+  resetPasswordSchema
 } from '~/validation/user.validator'
 
 export const getUserProfileController = asyncHandler(async (req: Request, res: Response) => {
@@ -64,12 +65,21 @@ export const forgotPasswordController = asyncHandler(async (req: Request, res: R
   })
 })
 
+export const verifyResetPasswordOTPController = asyncHandler(async (req: Request, res: Response) => {
+  const validatedData = verifyResetPasswordOTPSchema.parse(req.body)
+
+  const result = await verifyResetPasswordOTP(validatedData)
+
+  return res.status(HTTPSTATUS.OK).json({
+    message: result.message,
+    data: null
+  })
+})
+
 export const resetPasswordController = asyncHandler(async (req: Request, res: Response) => {
-  const { token } = resetPasswordTokenSchema.parse(req.query)
+  const validatedData = resetPasswordSchema.parse(req.body)
 
-  const { newPassword } = resetPasswordSchema.parse(req.body)
-
-  const result = await resetPassword(token, newPassword)
+  const result = await resetPassword(validatedData)
 
   return res.status(HTTPSTATUS.OK).json({
     message: result.message,
