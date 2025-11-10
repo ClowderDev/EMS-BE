@@ -18,6 +18,33 @@ type RequestUser = {
   branchId: mongoose.Types.ObjectId
 }
 
+// Helper: Get current date in Vietnam timezone (GMT+7) as UTC date at midnight
+const getTodayInVietnamTimezone = (): Date => {
+  const now = new Date()
+
+  // Convert current UTC time to Vietnam time (UTC+7)
+  const vietnamTime = new Date(now.getTime() + 7 * 60 * 60 * 1000)
+
+  // Get Vietnam date components
+  const year = vietnamTime.getUTCFullYear()
+  const month = vietnamTime.getUTCMonth()
+  const date = vietnamTime.getUTCDate()
+
+  // Return as UTC midnight for that Vietnam date
+  return new Date(Date.UTC(year, month, date, 0, 0, 0, 0))
+}
+
+// Helper: Get start and end of day for a date (used for queries)
+const getDayBounds = (date: Date): { startOfDay: Date; endOfDay: Date } => {
+  const startOfDay = new Date(date)
+  startOfDay.setHours(0, 0, 0, 0)
+
+  const endOfDay = new Date(date)
+  endOfDay.setHours(23, 59, 59, 999)
+
+  return { startOfDay, endOfDay }
+}
+
 // Helper: Calculate distance between two GPS coordinates (Haversine formula)
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
   const R = 6371 // Earth's radius in kilometers
@@ -52,24 +79,25 @@ export const checkIn = async (data: CheckInSchemaType, requestUser: RequestUser)
     throw new ForbiddenException('You can only check-in for your own shift registrations')
   }
 
-  // 3. Validate ngày hôm nay khớp với registration date
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  // 3. Validate ngày hôm nay (Vietnam timezone) khớp với registration date
+  const todayVN = getTodayInVietnamTimezone()
   const regDate = new Date(registration.date)
   regDate.setHours(0, 0, 0, 0)
 
-  if (today.getTime() !== regDate.getTime()) {
+  if (todayVN.getTime() !== regDate.getTime()) {
     throw new BadRequestException(
-      `This shift registration is for ${regDate.toLocaleDateString()}, not today (${today.toLocaleDateString()})`
+      `This shift registration is for ${regDate.toISOString().split('T')[0]}, not today (${todayVN.toISOString().split('T')[0]})`
     )
   }
 
   // 4. Kiểm tra đã check-in chưa
+  const { startOfDay, endOfDay } = getDayBounds(todayVN)
+
   const existingAttendance = await AttendanceModel.findOne({
     registrationId: new mongoose.Types.ObjectId(registrationId),
     date: {
-      $gte: new Date(today.setHours(0, 0, 0, 0)),
-      $lt: new Date(today.setHours(23, 59, 59, 999))
+      $gte: startOfDay,
+      $lt: endOfDay
     }
   })
 
@@ -116,7 +144,7 @@ export const checkIn = async (data: CheckInSchemaType, requestUser: RequestUser)
     employeeId: new mongoose.Types.ObjectId(employeeIdStr),
     shiftId: registration.shiftId,
     registrationId: new mongoose.Types.ObjectId(registrationId),
-    date: new Date(today),
+    date: todayVN, // Use Vietnam timezone date
     checkInTime: now,
     checkInLocation: {
       latitude,

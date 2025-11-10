@@ -16,12 +16,36 @@ type RequestUser = {
   branchId: mongoose.Types.ObjectId
 }
 
-// Helper: Parse date string to UTC midnight để tránh timezone issues
+// Helper: Parse date string to UTC midnight, preserving the date in the original timezone
 const parseToUTCDate = (dateString: string | Date): Date => {
   const inputDate = new Date(dateString)
 
-  // Tạo date ở UTC midnight (00:00:00) dựa trên year/month/day của input
-  return new Date(Date.UTC(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 0, 0, 0, 0))
+  // Convert to Vietnam time (GMT+7) để lấy đúng ngày
+  const vietnamTime = new Date(inputDate.getTime() + 7 * 60 * 60 * 1000)
+
+  // Lấy date components từ Vietnam time
+  const year = vietnamTime.getUTCFullYear()
+  const month = vietnamTime.getUTCMonth()
+  const date = vietnamTime.getUTCDate()
+
+  // Tạo UTC midnight cho ngày đó
+  return new Date(Date.UTC(year, month, date, 0, 0, 0, 0))
+}
+
+// Helper: Get today's date in Vietnam timezone (GMT+7) as UTC midnight
+const getTodayInVietnamTimezone = (): Date => {
+  const now = new Date()
+
+  // Convert current UTC time to Vietnam time (UTC+7)
+  const vietnamTime = new Date(now.getTime() + 7 * 60 * 60 * 1000)
+
+  // Get Vietnam date components
+  const year = vietnamTime.getUTCFullYear()
+  const month = vietnamTime.getUTCMonth()
+  const date = vietnamTime.getUTCDate()
+
+  // Return as UTC midnight for that Vietnam date
+  return new Date(Date.UTC(year, month, date, 0, 0, 0, 0))
 }
 
 // Helper: Kiểm tra conflict thời gian ca làm việc
@@ -186,11 +210,10 @@ export const createRegistration = async (data: CreateShiftRegistrationSchemaType
   // Parse date to UTC midnight để tránh timezone issues
   const registrationDate = parseToUTCDate(date)
 
-  // Kiểm tra không đăng ký ca trong quá khứ
-  const today = new Date()
-  const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0))
+  // Kiểm tra không đăng ký ca trong quá khứ (dùng Vietnam timezone)
+  const todayVN = getTodayInVietnamTimezone()
 
-  if (registrationDate < todayUTC) {
+  if (registrationDate < todayVN) {
     throw new BadRequestException('Cannot register for shifts in the past')
   }
 
