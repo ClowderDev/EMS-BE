@@ -19,7 +19,7 @@ type RequestUser = {
 // Helper: Parse date string to UTC midnight để tránh timezone issues
 const parseToUTCDate = (dateString: string | Date): Date => {
   const inputDate = new Date(dateString)
-  
+
   // Tạo date ở UTC midnight (00:00:00) dựa trên year/month/day của input
   return new Date(Date.UTC(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 0, 0, 0, 0))
 }
@@ -189,7 +189,7 @@ export const createRegistration = async (data: CreateShiftRegistrationSchemaType
   // Kiểm tra không đăng ký ca trong quá khứ
   const today = new Date()
   const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0))
-  
+
   if (registrationDate < todayUTC) {
     throw new BadRequestException('Cannot register for shifts in the past')
   }
