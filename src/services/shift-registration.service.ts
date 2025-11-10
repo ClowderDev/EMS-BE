@@ -16,6 +16,14 @@ type RequestUser = {
   branchId: mongoose.Types.ObjectId
 }
 
+// Helper: Parse date string to UTC midnight để tránh timezone issues
+const parseToUTCDate = (dateString: string | Date): Date => {
+  const inputDate = new Date(dateString)
+  
+  // Tạo date ở UTC midnight (00:00:00) dựa trên year/month/day của input
+  return new Date(Date.UTC(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate(), 0, 0, 0, 0))
+}
+
 // Helper: Kiểm tra conflict thời gian ca làm việc
 const checkShiftTimeConflict = async (employeeId: string, shiftId: string, date: Date): Promise<void> => {
   // Lấy thông tin shift mới
@@ -175,12 +183,14 @@ export const createRegistration = async (data: CreateShiftRegistrationSchemaType
     throw new ForbiddenException('You can only register for shifts in your branch')
   }
 
-  const registrationDate = new Date(date)
+  // Parse date to UTC midnight để tránh timezone issues
+  const registrationDate = parseToUTCDate(date)
 
   // Kiểm tra không đăng ký ca trong quá khứ
   const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  if (registrationDate < today) {
+  const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0))
+  
+  if (registrationDate < todayUTC) {
     throw new BadRequestException('Cannot register for shifts in the past')
   }
 
@@ -207,14 +217,14 @@ export const createRegistration = async (data: CreateShiftRegistrationSchemaType
   }
 
   // Kiểm tra conflict thời gian
-  await checkShiftTimeConflict(employeeIdStr, shiftId, new Date(date))
+  await checkShiftTimeConflict(employeeIdStr, shiftId, registrationDate)
 
   // Kiểm tra maxEmployees (nếu có)
   if (shift.maxEmployees) {
-    const startOfDay = new Date(date)
+    const startOfDay = new Date(registrationDate)
     startOfDay.setHours(0, 0, 0, 0)
 
-    const endOfDay = new Date(date)
+    const endOfDay = new Date(registrationDate)
     endOfDay.setHours(23, 59, 59, 999)
 
     const approvedCount = await ShiftRegistrationModel.countDocuments({
@@ -231,11 +241,11 @@ export const createRegistration = async (data: CreateShiftRegistrationSchemaType
     }
   }
 
-  // Tạo registration
+  // Tạo registration với UTC date
   const newRegistration = new ShiftRegistrationModel({
     employeeId: new mongoose.Types.ObjectId(employeeIdStr),
     shiftId: new mongoose.Types.ObjectId(shiftId),
-    date: new Date(date),
+    date: registrationDate, // Dùng parsed UTC date
     status: 'pending',
     note
   })
