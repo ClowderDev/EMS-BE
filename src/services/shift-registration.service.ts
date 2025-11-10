@@ -25,11 +25,17 @@ const checkShiftTimeConflict = async (employeeId: string, shiftId: string, date:
   }
 
   // Lấy tất cả registrations đã approved của employee trong ngày này
+  const startOfDay = new Date(date)
+  startOfDay.setHours(0, 0, 0, 0)
+
+  const endOfDay = new Date(date)
+  endOfDay.setHours(23, 59, 59, 999)
+
   const existingRegistrations = await ShiftRegistrationModel.find({
     employeeId: new mongoose.Types.ObjectId(employeeId),
     date: {
-      $gte: new Date(date.setHours(0, 0, 0, 0)),
-      $lt: new Date(date.setHours(23, 59, 59, 999))
+      $gte: startOfDay,
+      $lt: endOfDay
     },
     status: { $in: ['pending', 'approved'] }
   }).lean()
@@ -109,10 +115,15 @@ export const getRegistrations = async (query: GetRegistrationsQuerySchemaType, r
 
   // Filter theo date (ngày cụ thể)
   if (date) {
-    const targetDate = new Date(date)
+    const startOfDay = new Date(date)
+    startOfDay.setHours(0, 0, 0, 0)
+
+    const endOfDay = new Date(date)
+    endOfDay.setHours(23, 59, 59, 999)
+
     filter.date = {
-      $gte: new Date(targetDate.setHours(0, 0, 0, 0)),
-      $lt: new Date(targetDate.setHours(23, 59, 59, 999))
+      $gte: startOfDay,
+      $lt: endOfDay
     }
   }
 
@@ -176,12 +187,18 @@ export const createRegistration = async (data: CreateShiftRegistrationSchemaType
   // Kiểm tra đã đăng ký shift này trong ngày chưa
   const employeeIdStr = String(requestUser._id)
 
+  const startOfDay = new Date(registrationDate)
+  startOfDay.setHours(0, 0, 0, 0)
+
+  const endOfDay = new Date(registrationDate)
+  endOfDay.setHours(23, 59, 59, 999)
+
   const existingRegistration = await ShiftRegistrationModel.findOne({
     employeeId: new mongoose.Types.ObjectId(employeeIdStr),
     shiftId: new mongoose.Types.ObjectId(shiftId),
     date: {
-      $gte: new Date(registrationDate.setHours(0, 0, 0, 0)),
-      $lt: new Date(registrationDate.setHours(23, 59, 59, 999))
+      $gte: startOfDay,
+      $lt: endOfDay
     }
   })
 
@@ -194,11 +211,17 @@ export const createRegistration = async (data: CreateShiftRegistrationSchemaType
 
   // Kiểm tra maxEmployees (nếu có)
   if (shift.maxEmployees) {
+    const startOfDay = new Date(date)
+    startOfDay.setHours(0, 0, 0, 0)
+
+    const endOfDay = new Date(date)
+    endOfDay.setHours(23, 59, 59, 999)
+
     const approvedCount = await ShiftRegistrationModel.countDocuments({
       shiftId: new mongoose.Types.ObjectId(shiftId),
       date: {
-        $gte: new Date(new Date(date).setHours(0, 0, 0, 0)),
-        $lt: new Date(new Date(date).setHours(23, 59, 59, 999))
+        $gte: startOfDay,
+        $lt: endOfDay
       },
       status: 'approved'
     })
@@ -273,11 +296,17 @@ export const approveRegistration = async (
   // Kiểm tra maxEmployees trước khi approve
   const shift = await ShiftModel.findById(registration.shiftId)
   if (shift && shift.maxEmployees) {
+    const startOfDay = new Date(registration.date)
+    startOfDay.setHours(0, 0, 0, 0)
+
+    const endOfDay = new Date(registration.date)
+    endOfDay.setHours(23, 59, 59, 999)
+
     const approvedCount = await ShiftRegistrationModel.countDocuments({
       shiftId: registration.shiftId,
       date: {
-        $gte: new Date(new Date(registration.date).setHours(0, 0, 0, 0)),
-        $lt: new Date(new Date(registration.date).setHours(23, 59, 59, 999))
+        $gte: startOfDay,
+        $lt: endOfDay
       },
       status: 'approved'
     })
