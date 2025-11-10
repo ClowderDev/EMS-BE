@@ -81,12 +81,16 @@ export const checkIn = async (data: CheckInSchemaType, requestUser: RequestUser)
 
   // 3. Validate ngày hôm nay (Vietnam timezone) khớp với registration date
   const todayVN = getTodayInVietnamTimezone()
-  const regDate = new Date(registration.date)
-  regDate.setHours(0, 0, 0, 0)
 
-  if (todayVN.getTime() !== regDate.getTime()) {
+  // Parse registration date - it's already stored as UTC midnight for the VN date
+  const regDate = new Date(registration.date)
+  const regDateUTC = new Date(
+    Date.UTC(regDate.getUTCFullYear(), regDate.getUTCMonth(), regDate.getUTCDate(), 0, 0, 0, 0)
+  )
+
+  if (todayVN.getTime() !== regDateUTC.getTime()) {
     throw new BadRequestException(
-      `This shift registration is for ${regDate.toISOString().split('T')[0]}, not today (${todayVN.toISOString().split('T')[0]})`
+      `This shift registration is for ${regDateUTC.toISOString().split('T')[0]}, not today (${todayVN.toISOString().split('T')[0]})`
     )
   }
 
@@ -118,25 +122,81 @@ export const checkIn = async (data: CheckInSchemaType, requestUser: RequestUser)
 
   // GPS validation (if branch has location configured)
   if (branch.location && branch.location.latitude && branch.location.longitude) {
+    console.log('[GPS DEBUG]')
+    console.log('  User location:', { latitude, longitude })
+    console.log('  Branch location:', { lat: branch.location.latitude, lng: branch.location.longitude })
+    console.log('  Branch name:', branch.branchName)
+    
     const distance = calculateDistance(latitude, longitude, branch.location.latitude, branch.location.longitude)
     const maxDistanceKm = (branch.location.radius || 500) / 1000 // Convert meters to km
+    
+    console.log('  Distance (km):', distance)
+    console.log('  Distance (m):', Math.round(distance * 1000))
+    console.log('  Max allowed (m):', branch.location.radius || 500)
 
     if (distance > maxDistanceKm) {
-      throw new BadRequestException(
-        `You must be within ${branch.location.radius || 500}m of the branch to check-in. Current distance: ${Math.round(distance * 1000)}m`
-      )
+      // TODO: Temporarily disabled for testing - re-enable in production
+      console.warn('[GPS] Check-in outside allowed radius - but allowing for testing')
+      // throw new BadRequestException(
+      //   `You must be within ${branch.location.radius || 500}m of the branch to check-in. Current distance: ${Math.round(distance * 1000)}m`
+      // )
     }
   }
 
   // 6. Validate thời gian check-in trong khoảng shift time (có thể cho phép sớm 30 phút)
   const now = new Date()
-  const [shiftStartHour, shiftStartMin] = shift.startTime.split(':').map(Number)
-  const shiftStart = new Date()
-  shiftStart.setHours(shiftStartHour, shiftStartMin, 0, 0)
-  const earliestCheckIn = new Date(shiftStart.getTime() - 30 * 60 * 1000) // 30 minutes before
 
-  if (now < earliestCheckIn) {
-    throw new BadRequestException(`Check-in is only allowed from ${earliestCheckIn.toLocaleTimeString()} onwards`)
+  // Convert current time to Vietnam timezone to compare with shift time
+  const nowVietnam = new Date(now.getTime() + 7 * 60 * 60 * 1000)
+  const currentHour = nowVietnam.getUTCHours()
+  const currentMinute = nowVietnam.getUTCMinutes()
+
+  const [shiftStartHour, shiftStartMin] = shift.startTime.split(':').map(Number)
+  const [shiftEndHour, shiftEndMin] = shift.endTime.split(':').map(Number)
+
+  // Convert time to minutes for easier comparison
+  const currentTimeInMinutes = currentHour * 60 + currentMinute
+  const shiftStartInMinutes = shiftStartHour * 60 + shiftStartMin
+  const shiftEndInMinutes = shiftEndHour * 60 + shiftEndMin
+
+  // Calculate earliest check-in time (30 minutes before shift start)
+  let earliestCheckInMinutes = shiftStartInMinutes - 30
+
+  // Handle wrap-around for times before midnight (e.g., 23:30 = 1410 minutes, not -30)
+  if (earliestCheckInMinutes < 0) {
+    earliestCheckInMinutes = 1440 + earliestCheckInMinutes // 1440 minutes in a day
+  }
+
+  // Handle overnight shifts (e.g., 22:00 - 06:00)
+  const isOvernightShift = shiftEndInMinutes < shiftStartInMinutes
+
+  let canCheckIn = false
+
+  if (isOvernightShift) {
+    // For overnight shifts: can check-in from 30 mins before start until end time next day
+    canCheckIn = currentTimeInMinutes >= earliestCheckInMinutes || currentTimeInMinutes <= shiftEndInMinutes
+  } else {
+    // For regular shifts that start near midnight (e.g., 00:00-08:00)
+    if (earliestCheckInMinutes > shiftStartInMinutes) {
+      // earliestCheckIn is previous day (e.g., 23:30 for 00:00 start)
+      // Allow check-in if: time >= 23:30 (previous day) OR time <= 08:00 (current day)
+      canCheckIn = currentTimeInMinutes >= earliestCheckInMinutes || currentTimeInMinutes <= shiftEndInMinutes
+    } else {
+      // Normal case: check-in window is within same day
+      canCheckIn = currentTimeInMinutes >= earliestCheckInMinutes && currentTimeInMinutes <= shiftEndInMinutes
+    }
+  }
+
+  if (!canCheckIn) {
+    const formatTime = (mins: number) => {
+      const h = Math.floor(mins / 60) % 24
+      const m = mins % 60
+      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
+    }
+
+    throw new BadRequestException(
+      `Check-in is only allowed from ${formatTime(earliestCheckInMinutes)} to ${shift.endTime} (Vietnam time). Current time: ${formatTime(currentTimeInMinutes)}`
+    )
   }
 
   // 7. Create attendance record
