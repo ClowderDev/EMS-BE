@@ -122,24 +122,13 @@ export const checkIn = async (data: CheckInSchemaType, requestUser: RequestUser)
 
   // GPS validation (if branch has location configured)
   if (branch.location && branch.location.latitude && branch.location.longitude) {
-    console.log('[GPS DEBUG]')
-    console.log('  User location:', { latitude, longitude })
-    console.log('  Branch location:', { lat: branch.location.latitude, lng: branch.location.longitude })
-    console.log('  Branch name:', branch.branchName)
-    
     const distance = calculateDistance(latitude, longitude, branch.location.latitude, branch.location.longitude)
     const maxDistanceKm = (branch.location.radius || 500) / 1000 // Convert meters to km
-    
-    console.log('  Distance (km):', distance)
-    console.log('  Distance (m):', Math.round(distance * 1000))
-    console.log('  Max allowed (m):', branch.location.radius || 500)
 
     if (distance > maxDistanceKm) {
-      // TODO: Temporarily disabled for testing - re-enable in production
-      console.warn('[GPS] Check-in outside allowed radius - but allowing for testing')
-      // throw new BadRequestException(
-      //   `You must be within ${branch.location.radius || 500}m of the branch to check-in. Current distance: ${Math.round(distance * 1000)}m`
-      // )
+      throw new BadRequestException(
+        `You must be within ${branch.location.radius || 500}m of the branch to check-in. Current distance: ${Math.round(distance * 1000)}m`
+      )
     }
   }
 
