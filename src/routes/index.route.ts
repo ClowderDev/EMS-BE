@@ -11,6 +11,7 @@ import reportRoutes from './report.route'
 import messageRoutes from './message.route'
 import violationRoutes from './violation.route'
 import payrollRoutes from './payroll.route'
+import salaryGoalRoutes from './salary-goal.route'
 
 const router = express.Router()
 
@@ -26,5 +27,6 @@ router.use('/reports', reportRoutes)
 router.use('/messages', messageRoutes)
 router.use('/violations', violationRoutes)
 router.use('/payroll', payrollRoutes)
+router.use('/salary-goals', salaryGoalRoutes)
 
 export default router

@@ -2,6 +2,7 @@ import mongoose from 'mongoose'
 import MessageModel from '../models/message.model'
 import EmployeeModel from '../models/employee.model'
 import { NotFoundException, BadRequestException, ForbiddenException } from '../utils/app-error'
+import { createNotification } from './notification.service'
 
 interface SendDirectMessageData {
   senderId: string
@@ -54,6 +55,16 @@ export const sendDirectMessage = async (data: SendDirectMessageData) => {
   await message.populate('senderId', 'name email role')
   await message.populate('receiverId', 'name email role')
 
+  // Send notification to receiver (async, don't block)
+  const contentPreview = content.length > 50 ? content.substring(0, 50) + '...' : content
+  createNotification({
+    employeeId: receiverId,
+    title: '💬 New Message',
+    message: `${sender.name} sent you a message: "${contentPreview}"`
+  }).catch((err) => {
+    console.error('Failed to send message notification:', err)
+  })
+
   return message
 }
 
@@ -87,6 +98,31 @@ export const sendGroupMessage = async (data: SendGroupMessageData) => {
 
   // Populate sender info
   await message.populate('senderId', 'name email role')
+
+  // Send notification to all branch members except sender (async, don't block)
+  const contentPreview = content.length > 50 ? content.substring(0, 50) + '...' : content
+  EmployeeModel.find({
+    branchId,
+    _id: { $ne: senderId }
+  })
+    .select('_id')
+    .lean()
+    .then((members) => {
+      return Promise.all(
+        members.map((member) =>
+          createNotification({
+            employeeId: String(member._id),
+            title: '📢 New Group Message',
+            message: `${sender.name}: "${contentPreview}"`
+          }).catch((err) => {
+            console.error(`Failed to send group message notification to ${String(member._id)}:`, err)
+          })
+        )
+      )
+    })
+    .catch((err) => {
+      console.error('Failed to send group message notifications:', err)
+    })
 
   return message
 }
