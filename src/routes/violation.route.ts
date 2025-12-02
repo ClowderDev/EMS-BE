@@ -10,44 +10,160 @@ const router = express.Router()
 router.use(authMiddleware)
 
 /**
- * @route   POST /api/v1/violations
- * @desc    Create a new violation (manager/admin only)
- * @access  Manager, Admin
+ * @swagger
+ * /violations:
+ *   post:
+ *     tags: [Violations]
+ *     summary: Create new violation (Manager/Admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - employeeId
+ *               - violationType
+ *               - description
+ *               - penaltyAmount
+ *             properties:
+ *               employeeId:
+ *                 type: string
+ *               violationType:
+ *                 type: string
+ *                 enum: [late, absence, policy, safety, other]
+ *               description:
+ *                 type: string
+ *               penaltyAmount:
+ *                 type: number
+ *               date:
+ *                 type: string
+ *                 format: date
+ *     responses:
+ *       201:
+ *         description: Violation created successfully
  */
 router.post('/', adminOrManager, asyncHandler(violationController.createViolationController))
 
 /**
- * @route   GET /api/v1/violations
- * @desc    Get violations with filters (role-based access)
- * @access  Employee (own), Manager (branch), Admin (all)
+ * @swagger
+ * /violations:
+ *   get:
+ *     tags: [Violations]
+ *     summary: Get violations with filters
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: employeeId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: violationType
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, acknowledged, resolved]
+ *     responses:
+ *       200:
+ *         description: Violations retrieved successfully
  */
 router.get('/', authenticatedOnly, asyncHandler(violationController.getViolationsController))
 
 /**
- * @route   GET /api/v1/violations/:id
- * @desc    Get single violation by ID
- * @access  Employee (own), Manager (branch), Admin (all)
+ * @swagger
+ * /violations/{id}:
+ *   get:
+ *     tags: [Violations]
+ *     summary: Get violation by ID
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Violation retrieved successfully
  */
 router.get('/:id', authenticatedOnly, asyncHandler(violationController.getViolationByIdController))
 
 /**
- * @route   PATCH /api/v1/violations/:id
- * @desc    Update violation (manager/admin only)
- * @access  Manager, Admin
+ * @swagger
+ * /violations/{id}:
+ *   patch:
+ *     tags: [Violations]
+ *     summary: Update violation (Manager/Admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               description:
+ *                 type: string
+ *               penaltyAmount:
+ *                 type: number
+ *               status:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Violation updated successfully
  */
 router.patch('/:id', adminOrManager, asyncHandler(violationController.updateViolationController))
 
 /**
- * @route   POST /api/v1/violations/:id/acknowledge
- * @desc    Acknowledge violation (employee only)
- * @access  Employee (own violations)
+ * @swagger
+ * /violations/{id}/acknowledge:
+ *   post:
+ *     tags: [Violations]
+ *     summary: Acknowledge violation (Employee)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Violation acknowledged successfully
  */
 router.post('/:id/acknowledge', authenticatedOnly, asyncHandler(violationController.acknowledgeViolationController))
 
 /**
- * @route   DELETE /api/v1/violations/:id
- * @desc    Delete violation (admin only)
- * @access  Admin
+ * @swagger
+ * /violations/{id}:
+ *   delete:
+ *     tags: [Violations]
+ *     summary: Delete violation (Admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Violation deleted successfully
  */
 router.delete('/:id', adminOnly, asyncHandler(violationController.deleteViolationController))
 

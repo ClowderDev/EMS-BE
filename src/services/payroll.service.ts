@@ -308,3 +308,45 @@ export const recalculatePayroll = async (payrollId: string, userId: string, user
 
   return newPayroll
 }
+
+/**
+ * Process payment for approved payroll (admin only)
+ */
+export const processPayment = async (payrollId: string, userId: string, userRole: string) => {
+  // Only admins can process payments
+  if (userRole !== 'admin') {
+    throw new BadRequestException('Only admins can process payments')
+  }
+
+  const payroll = await PayrollModel.findById(payrollId)
+
+  if (!payroll) {
+    throw new NotFoundException('Payroll not found')
+  }
+
+  // Can only pay approved payrolls
+  if (payroll.status !== 'approved') {
+    throw new BadRequestException('Can only pay approved payrolls. Current status: ' + payroll.status)
+  }
+
+  // Check if already paid
+  if (payroll.paidAt) {
+    throw new BadRequestException('This payroll has already been paid')
+  }
+
+  // Simulate payment processing (in real system, would integrate with payment gateway)
+  // Here we just mark as paid
+  payroll.status = 'paid'
+  payroll.paidAt = new Date()
+  payroll.paidBy = userId as unknown as typeof payroll.paidBy
+
+  await payroll.save()
+
+  await payroll.populate([
+    { path: 'employeeId', select: 'name email role phone' },
+    { path: 'branchId', select: 'branchName' },
+    { path: 'paidBy', select: 'name role' }
+  ])
+
+  return payroll
+}

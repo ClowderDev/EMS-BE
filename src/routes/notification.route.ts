@@ -13,19 +13,102 @@ const router = Router()
 
 router.use(authMiddleware)
 
-// Get all notifications for current user (with filters)
+/**
+ * @swagger
+ * /notifications:
+ *   get:
+ *     tags: [Notifications]
+ *     summary: Get user notifications
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [read, unread]
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *     responses:
+ *       200:
+ *         description: Notifications retrieved successfully
+ */
 router.get('/', authenticatedOnly, getNotificationsController)
 
-// Mark specific notification as read
+/**
+ * @swagger
+ * /notifications/{id}/read:
+ *   put:
+ *     tags: [Notifications]
+ *     summary: Mark notification as read
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Notification marked as read
+ */
 router.put('/:id/read', authenticatedOnly, markNotificationAsReadController)
 
-// Mark all notifications as read
+/**
+ * @swagger
+ * /notifications/read-all:
+ *   put:
+ *     tags: [Notifications]
+ *     summary: Mark all notifications as read
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All notifications marked as read
+ */
 router.put('/read-all', authenticatedOnly, markAllNotificationsAsReadController)
 
-// Delete specific notification
+/**
+ * @swagger
+ * /notifications/{id}:
+ *   delete:
+ *     tags: [Notifications]
+ *     summary: Delete notification
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Notification deleted successfully
+ */
 router.delete('/:id', authenticatedOnly, deleteNotificationController)
 
-// Delete all read notifications
+/**
+ * @swagger
+ * /notifications/read-all:
+ *   delete:
+ *     tags: [Notifications]
+ *     summary: Delete all read notifications
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Read notifications deleted successfully
+ */
 router.delete('/read-all', authenticatedOnly, deleteAllReadNotificationsController)
 
 export default router

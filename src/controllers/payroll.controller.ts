@@ -77,3 +77,16 @@ export const recalculatePayrollController = async (req: Request, res: Response) 
     data: payroll
   })
 }
+
+/**
+ * Process payment for payroll (admin only)
+ */
+export const processPaymentController = async (req: Request, res: Response) => {
+  const payroll = await payrollService.processPayment(req.params.id, req.user!.id, req.user!.role)
+
+  res.status(200).json({
+    success: true,
+    message: 'Payment processed successfully. Payroll has been marked as paid.',
+    data: payroll
+  })
+}

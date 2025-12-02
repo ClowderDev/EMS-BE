@@ -3,8 +3,10 @@ import 'dotenv/config'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import { createServer } from 'http'
+import swaggerUi from 'swagger-ui-express'
 import { Env } from './config/env.config'
 import connectDatabase from '~/config/database.config'
+import { swaggerSpec } from './config/swagger.config'
 import routes from './routes/index.route'
 import { errorHandler } from '~/middleware/errorHandler.middleware'
 import { initializeSocketIO } from './socket'
@@ -14,7 +16,7 @@ const httpServer = createServer(app)
 
 connectDatabase()
 
-const allowedOrigins = ['http://localhost:3000', 'http://localhost:5173', Env.FRONTEND_URL]
+const allowedOrigins = ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5000', Env.FRONTEND_URL]
 
 const corsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
@@ -39,6 +41,17 @@ app.use(cookieParser())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
+// Swagger API Documentation
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'EMS API Documentation'
+  })
+)
+
+// API Routes
 app.use('/api/v1', routes)
 
 // Handle 404 - Route not found
@@ -58,4 +71,5 @@ initializeSocketIO(httpServer)
 httpServer.listen(Env.PORT, () => {
   console.log(`Server is running on port ${Env.PORT}`)
   console.log(`Socket.IO is ready for connections`)
+  console.log(`📚 API Documentation: http://localhost:${Env.PORT}/api-docs`)
 })
